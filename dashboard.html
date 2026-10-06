@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cross-MA + LightGBM · Дашборд стратегии EUR/USD H1</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#30363d;
+    --txt:#e6edf3; --muted:#8b949e; --green:#3fb950; --red:#f85149;
+    --blue:#58a6ff; --gold:#d29922; --purple:#bc8cff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.5;padding:24px}
+  .wrap{max-width:1180px;margin:0 auto}
+  header{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+  header h1{font-size:26px;font-weight:700}
+  .badge{background:var(--green);color:#03210a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:28px}
+  .section-title{font-size:18px;font-weight:600;margin:34px 0 16px;padding-left:12px;border-left:3px solid var(--blue)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
+  .kpi{background:linear-gradient(145deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:12px;padding:18px 16px}
+  .kpi .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  .kpi .val{font-size:28px;font-weight:700;margin-top:6px}
+  .kpi .sub2{font-size:12px;color:var(--muted);margin-top:2px}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  tr:hover td{background:var(--panel2)}
+  .pill{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600}
+  .pill.ok{background:rgba(63,185,80,.15);color:var(--green)}
+  .pill.bad{background:rgba(248,81,73,.15);color:var(--red)}
+  .pill.warn{background:rgba(210,153,34,.15);color:var(--gold)}
+  .pill.arch{background:rgba(188,140,255,.15);color:var(--purple)}
+  .chart-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:4px}
+  .pipe{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-top:10px}
+  .node{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;flex:1;min-width:120px}
+  .node .t{font-weight:600;font-size:13px;color:var(--blue)}
+  .node .d{font-size:11px;color:var(--muted);margin-top:4px}
+  .arrow{display:flex;align-items:center;color:var(--muted);font-size:20px}
+  .regime-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:8px}
+  .regime{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px}
+  .regime .name{font-weight:600}
+  .regime .stat{font-size:12px;color:var(--muted);margin-top:6px}
+  .note{background:rgba(88,166,255,.08);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:8px;padding:14px 16px;font-size:13px;color:var(--muted);margin-top:16px}
+  .note b{color:var(--txt)}
+  footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;text-align:center}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>📈 Cross-MA + LightGBM</h1>
+    <span class="badge">EUR/USD · H1</span>
+  </header>
+  <div class="sub">Адаптивная торговая система на основе гибридных архитектур и мультитаймфрейм-анализа · Walk-Forward валидация · 2024–2026</div>
+
+  <!-- KPI -->
+  <div class="section-title">Итоговые метрики (лучшая версия v8)</div>
+  <div class="kpis">
+    <div class="kpi"><div class="label">Доходность</div><div class="val pos">+16.5%</div><div class="sub2">$10 000 → $11 649</div></div>
+    <div class="kpi"><div class="label">Sharpe Ratio</div><div class="val pos">2.68</div><div class="sub2">риск-скорр. доходность</div></div>
+    <div class="kpi"><div class="label">Profit Factor</div><div class="val pos">1.98</div><div class="sub2">прибыль / убыток</div></div>
+    <div class="kpi"><div class="label">Max Drawdown</div><div class="val neg">-3.1%</div><div class="sub2">макс. просадка</div></div>
+    <div class="kpi"><div class="label">Win Rate</div><div class="val pos">62.1%</div><div class="sub2">95 сделок</div></div>
+  </div>
+
+  <!-- Evolution -->
+  <div class="section-title">Эволюция стратегии</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Версия</th><th>Подход</th><th>Доходность</th><th>WR</th><th>Sharpe</th><th>PF</th><th>Max DD</th><th>Статус</th></tr></thead>
+      <tbody>
+        <tr><td><b>v1</b></td><td>Оригинал: Cross_MA + LightGBM</td><td class="neg">-30.0%</td><td>44.7%</td><td>—</td><td>—</td><td class="neg">-67%</td><td><span class="pill warn">база</span></td></tr>
+        <tr><td><b>v2</b></td><td>+ признаки (MACD, BB, MTF) + WF</td><td class="neg">-2.7%</td><td>47.3%</td><td>—</td><td>—</td><td class="neg">-4.3%</td><td><span class="pill warn">эксперимент</span></td></tr>
+        <tr><td><b>v3</b></td><td>Регрессия (величина движения)</td><td colspan="5" style="color:var(--muted)">corr = -0.016 → нет сигнала</td><td><span class="pill bad">провал</span></td></tr>
+        <tr><td><b>v4</b></td><td>Ensemble + edge-sizing</td><td class="neg">-72%</td><td>49%</td><td>-0.8</td><td>0.85</td><td class="neg">-79%</td><td><span class="pill bad">провал</span></td></tr>
+        <tr><td><b>v5</b></td><td>Kelly + adaptive</td><td class="neg">-72%</td><td>49%</td><td>-1.1</td><td>0.76</td><td class="neg">-90%</td><td><span class="pill bad">провал</span></td></tr>
+        <tr><td><b>v6</b></td><td>VMD + MTF + Regime</td><td class="pos">+6317%*</td><td>77%</td><td>9.6</td><td>8.7</td><td class="neg">-*</td><td><span class="pill bad">LOOK-AHEAD ⚠</span></td></tr>
+        <tr><td><b>v7</b></td><td>Честный MTF + Regime ensemble</td><td class="pos">+8.7%</td><td>55.9%</td><td>0.49</td><td>1.11</td><td class="neg">-9.4%</td><td><span class="pill ok">рабочая</span></td></tr>
+        <tr style="background:rgba(63,185,80,.06)"><td><b>v8</b></td><td><b>Regime Orchestrator (только боковик)</b></td><td class="pos"><b>+16.5%</b></td><td><b>62.1%</b></td><td><b>2.68</b></td><td><b>1.98</b></td><td class="neg"><b>-3.1%</b></td><td><span class="pill ok">★ ЛУЧШАЯ</span></td></tr>
+      </tbody>
+    </table>
+    <div class="note">* <b>v6 помечена LOOK-AHEAD BIAS</b> — некаузальная VMD-декомпозиция использовала будущие данные. Скрипт перенесён в <code>Архив_look-ahead bias\</code>. Все остальные метрики (кроме v1/v2) получены честным Walk-Forward без утечки будущего.</div>
+  </div>
+
+  <!-- Equity chart -->
+  <div class="section-title">Кривая капитала: v7 (все режимы) vs v8 (фильтр боковика)</div>
+  <div class="chart-box"><canvas id="equityChart" height="90"></canvas></div>
+
+  <!-- Comparison charts -->
+  <div class="section-title">Сравнение версий</div>
+  <div class="grid2">
+    <div class="chart-box"><canvas id="retChart" height="200"></canvas></div>
+    <div class="chart-box"><canvas id="sharpeChart" height="200"></canvas></div>
+  </div>
+
+  <!-- Architecture -->
+  <div class="section-title">Архитектура v8 (Pipeline)</div>
+  <div class="card">
+    <div class="pipe">
+      <div class="node"><div class="t">📊 Данные</div><div class="d">EUR/USD H1<br>16 469 свечей<br>2024–2026</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="t">⚙️ Признаки</div><div class="d">34 фичи:<br>SMA/EMA, RSI,<br>MACD, ATR, BB,<br>MTF (H4/D1),<br>Vol, Session</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="t">🔀 Режим</div><div class="d">ADX + ATR_Ratio<br>→ 4 режима:<br>trend/range ×<br>hi/lo vol</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="t">🤖 Ансамбль</div><div class="d">7× LightGBM<br>(разные seed,<br>гиперпарам.)<br>→ усреднение</div></div>
+    </div>
+    <div class="pipe" style="margin-top:10px">
+      <div class="node"><div class="t">🎯 Orchestrator</div><div class="d">Только range_*<br>режимы<br>(mean-reversion)<br>Тренды — нет</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="t">💰 Sizing</div><div class="d">Kelly-like:<br>pos ∝ confidence<br>2%–10% капитала</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="t">📈 Backtest</div><div class="d">Walk-Forward<br>9 окон × 2 мес<br>spread 1 пип</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="t">✅ Метрики</div><div class="d">Sharpe, PF,<br>Monte Carlo,<br>DD, WR</div></div>
+    </div>
+  </div>
+
+  <!-- Regime analysis -->
+  <div class="section-title">Анализ по режимам (v8)</div>
+  <div class="regime-grid">
+    <div class="regime" style="border-left:3px solid var(--green)">
+      <div class="name">range_lo ✅</div><div class="stat">Боковик · низкая волатильность<br>78 сделок · WR <b>61.5%</b><br>P&L: <span class="pos">+$1 040</span></div>
+    </div>
+    <div class="regime" style="border-left:3px solid var(--green)">
+      <div class="name">range_hi ✅</div><div class="stat">Боковик · высокая волатильность<br>17 сделок · WR <b>64.7%</b><br>P&L: <span class="pos">+$609</span></div>
+    </div>
+    <div class="regime" style="border-left:3px solid var(--red)">
+      <div class="name">trend_lo ⛔</div><div class="stat">Тренд · низкая волатильность<br>исключён Orchestrator'ом<br>в v7: +$187 (шум)</div>
+    </div>
+    <div class="regime" style="border-left:3px solid var(--red)">
+      <div class="name">trend_hi ⛔</div><div class="stat">Тренд · высокая волатильность<br>исключён (худший)<br>в v7: <span class="neg">-$476</span></div>
+    </div>
+  </div>
+  <div class="note"><b>Ключевой инсайт:</b> модель эффективна как <b>mean-reversion</b> в боковых рынках (флипает экстремумы), но систематически проигрывает в трендах. Исключение trend-режимов подняло Sharpe с 0.49 до <b>2.68</b> и срезало просадку с -9.4% до <b>-3.1%</b>.</div>
+
+  <!-- Files -->
+  <div class="section-title">Файлы проекта</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Файл</th><th>Назначение</th></tr></thead>
+      <tbody>
+        <tr><td><code>7_final.py</code></td><td>Честный базовый backtest (все режимы) — +8.7%</td></tr>
+        <tr><td><code>8_regime_filter.py</code></td><td><b>ЛУЧШАЯ</b> — Regime Orchestrator, range-only — +16.5%</td></tr>
+        <tr><td><code>equity_v8.csv</code></td><td>Построчная эквити v8 (DateTime, Equity, Drawdown_%)</td></tr>
+        <tr><td><code>backtest_v8_regime.png</code></td><td>График эквити / P&L / по режимам</td></tr>
+        <tr><td><code>pdf_to_txt.py</code></td><td>Конвертер PDF→TXT (исходная статья)</td></tr>
+        <tr><td><code>Архив_look-ahead bias\</code></td><td>v6 (некаузальный VMD) — НЕ использовать</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    Сгенерировано автоматически · Данные: EURUSD_H1_202401020000_202608262100.csv · Метрики получены Walk-Forward валидацией без look-ahead bias<br>
+    ⚠ Доходность историческая, не гарантирует будущих результатов. Требуется проверка на свежих данных и демо-счёте.
+  </footer>
+
+</div>
+
+<script>
+// ===== Данные эквити (downsampled) =====
+const v7 = [{"t":"2025-03-03","e":10000},{"t":"2025-03-24","e":10163},{"t":"2025-04-08","e":10933},{"t":"2025-04-24","e":11128},{"t":"2025-05-09","e":10542},{"t":"2025-05-27","e":10383},{"t":"2025-06-11","e":10734},{"t":"2025-07-09","e":11033},{"t":"2025-07-31","e":11011},{"t":"2025-08-11","e":11492},{"t":"2025-09-11","e":11297},{"t":"2025-10-08","e":11560},{"t":"2025-11-10","e":11432},{"t":"2025-12-08","e":11418},{"t":"2026-01-06","e":11482},{"t":"2026-02-02","e":11053},{"t":"2026-03-05","e":10686},{"t":"2026-04-13","e":10806},{"t":"2026-05-14","e":10712},{"t":"2026-06-16","e":10608},{"t":"2026-07-23","e":10578},{"t":"2026-08-26","e":10874}];
+const v8 = [{"t":"2025-03-03","e":10000},{"t":"2025-03-24","e":10100},{"t":"2025-04-08","e":10688},{"t":"2025-04-24","e":11058},{"t":"2025-05-09","e":11074},{"t":"2025-05-27","e":11056},{"t":"2025-06-23","e":11272},{"t":"2025-07-15","e":11274},{"t":"2025-07-31","e":11066},{"t":"2025-08-11","e":11392},{"t":"2025-09-11","e":11436},{"t":"2025-10-14","e":11551},{"t":"2025-11-14","e":11517},{"t":"2025-12-08","e":11696},{"t":"2026-01-12","e":11743},{"t":"2026-02-06","e":11648},{"t":"2026-03-11","e":11674},{"t":"2026-04-17","e":11723},{"t":"2026-05-14","e":11524},{"t":"2026-06-16","e":11535},{"t":"2026-07-17","e":11459},{"t":"2026-08-26","e":11649}];
+
+const labels = v8.map(d=>d.t);
+new Chart(document.getElementById('equityChart'),{
+  type:'line',
+  data:{labels,datasets:[
+    {label:'v7 (все режимы)',data:v7.map(d=>d.e),borderColor:'#8b949e',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:.2},
+    {label:'v8 (range-only)',data:v8.map(d=>d.e),borderColor:'#3fb950',backgroundColor:'rgba(63,185,80,.08)',borderWidth:2.5,pointRadius:0,tension:.2,fill:true}
+  ]},
+  options:{responsive:true,plugins:{legend:{labels:{color:'#e6edf3'}}},scales:{
+    x:{ticks:{color:'#8b949e',maxTicksLimit:10},grid:{color:'#21262d'}},
+    y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'},title:{display:true,text:'Капитал, $',color:'#8b949e'}}}}
+});
+
+// Return bar chart
+const versions = ['v1','v2','v3','v4','v5','v7','v8'];
+const returns  = [-30,-2.7,0,-72,-72,8.7,16.5];
+const colors   = returns.map(r=> r>=0?'#3fb950':'#f85149');
+new Chart(document.getElementById('retChart'),{
+  type:'bar',
+  data:{labels:versions,datasets:[{label:'Доходность %',data:returns,backgroundColor:colors}]},
+  options:{responsive:true,plugins:{legend:{display:false},title:{display:true,text:'Доходность по версиям (%)',color:'#e6edf3'}},
+    scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
+});
+
+// Sharpe bar chart
+const shV = ['v4','v5','v7','v8'];
+const sh  = [-0.8,-1.1,0.49,2.68];
+const sc  = sh.map(r=> r>=0?'#58a6ff':'#f85149');
+new Chart(document.getElementById('sharpeChart'),{
+  type:'bar',
+  data:{labels:shV,datasets:[{label:'Sharpe',data:sh,backgroundColor:sc}]},
+  options:{responsive:true,plugins:{legend:{display:false},title:{display:true,text:'Sharpe Ratio по версиям',color:'#e6edf3'}},
+    scales:{x:{ticks:{color:'#8b949e'},grid:{display:false}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}
+});
+</script>
+</body>
+</html>
